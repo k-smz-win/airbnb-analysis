@@ -18,6 +18,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
+from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -56,8 +57,13 @@ def _create_driver():
     options.add_argument("--start-maximized")
     options.add_argument("--disable-webrtc")
     options.add_argument("--log-level=3")
-    service = Service(EDGE_DRIVER_NAME)
-    driver = webdriver.Edge(service=service, options=options)
+    try:
+        # Selenium Manager による自動解決（Edge本体とドライバの不一致を避ける）
+        driver = webdriver.Edge(options=options)
+    except (SessionNotCreatedException, WebDriverException):
+        # オフライン等で自動解決できない場合のみローカルドライバへフォールバック
+        service = Service(EDGE_DRIVER_NAME)
+        driver = webdriver.Edge(service=service, options=options)
     driver.get(AIRBNB_TOP_URL)
     # ページ読み込み待ち
     time.sleep(SLEEP_AFTER_OPEN_SEC)
